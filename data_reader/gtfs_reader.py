@@ -36,8 +36,8 @@ for entity in feed.entity:
         trip_id = entity.trip_update.trip.trip_id
         for update in entity.trip_update.stop_time_update:
             if update.HasField('arrival') and update.arrival.delay > 0:
-                delay = update.arrival.delay
-                realtime_updates.append({'trip_id': trip_id, 'delay': delay})
+                delay_in_minutes = update.arrival.delay / 60  # Convert delay to minutes
+                realtime_updates.append({'trip_id': trip_id, 'delay': delay_in_minutes})
 
 # Convert to DataFrame using Polars
 realtime_df = pl.DataFrame(realtime_updates).lazy()
@@ -45,8 +45,12 @@ realtime_df = pl.DataFrame(realtime_updates).lazy()
 # Merge with static data to get a complete view using Polars
 merged_df = schedule_df.join(realtime_df, on='trip_id')
 
-# Create summary - Example: Average delay per route using Polars
-summary_df = merged_df.groupby('route_id').agg(pl.col('delay').mean())
+# Create a summary DataFrame with all fields
+# Group by all fields except 'delay' and then calculate the average delay
+group_columns = [col for col in merged_df.columns if col != 'delay']
+summary_df = merged_df.group_by(group_columns).agg([
+    pl.col('delay').mean().alias('average_delay_minutes')
+])
 
 # Collect the results and print or save the summary DataFrame
 summary_df = summary_df.collect()
