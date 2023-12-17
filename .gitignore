@@ -1,3 +1,4 @@
 /rome
 *.txt
 *./pycache
+*.txt
