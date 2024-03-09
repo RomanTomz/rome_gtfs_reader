@@ -18,8 +18,8 @@ dtype_spec = {
 }
 
 # Load schedules from GTFS static data using Polars
-stop_times_df = pl.read_csv("rome_static_gtfs/stop_times.txt", dtypes=dtype_spec).lazy()
-trips_df = pl.read_csv("rome_static_gtfs/trips.txt", dtypes=dtype_spec).lazy()
+stop_times_df = pl.read_csv("data_reader/rome_static_gtfs/stop_times.txt", dtypes=dtype_spec).lazy()
+trips_df = pl.read_csv("data_reader/rome_static_gtfs/trips.txt", dtypes=dtype_spec).lazy()
 
 # Combine schedule data into one DataFrame using Polars
 schedule_df = trips_df.join(stop_times_df, on="trip_id")
