@@ -48,9 +48,12 @@ class GTFSDataProcessor:
     def merge_and_process_data(self):
         merged_df = self.schedule_df.join(self.realtime_df, on='trip_id')
         group_columns = [col for col in merged_df.columns if col != 'delay']
-        self.summary_df = merged_df.group_by(group_columns).agg([
+        self.summary_df = (
+            merged_df
+            .group_by(group_columns)
+            .agg([
             pl.col('delay').mean().alias('average_delay_minutes')
-        ]).collect()
+        ])).unique(subset=['route_id', 'service_id','trip_id']).collect()
 
     def get_summary_df(self):
         if self.summary_df is None:
