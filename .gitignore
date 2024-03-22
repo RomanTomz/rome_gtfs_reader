@@ -1,4 +1,10 @@
 /rome
 *.txt
-*./pycache
+*./data_reader/__pycache__
 *.txt
+/temp_gtfs
+/.vscode
+/.pytest_cache
+__pycache__/
+
+
