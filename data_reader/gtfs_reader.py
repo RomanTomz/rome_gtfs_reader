@@ -21,6 +21,21 @@ class GTFSDataProcessor:
             'route_id': pl.Utf8,
             'shape_id': pl.Utf8,
             'trip_short_name': pl.Utf8,
+            'service_id': pl.Utf8,
+            'direction_id': pl.Int32,
+            'stop_sequence': pl.Int32,
+            'arrival_time': pl.Utf8,
+            'departure_time': pl.Utf8,
+            'stop_headsign': pl.Utf8,
+            'pickup_type': pl.Int32,
+            'drop_off_type': pl.Int32,
+            'timepoint': pl.Int32,
+            'delay': pl.Int32,
+            'stop_lat': pl.Float64,
+            'stop_lon': pl.Float64,
+            'stop_code': pl.Utf8,
+            
+            
             # Add other columns and their types as needed
         }
         self.schedule_df = None
@@ -43,6 +58,18 @@ class GTFSDataProcessor:
         stop_times_df = pl.read_csv("temp_gtfs/stop_times.txt", dtypes=self.dtype_spec).lazy()
         trips_df = pl.read_csv("temp_gtfs/trips.txt", dtypes=self.dtype_spec).lazy()
         self.schedule_df = trips_df.join(stop_times_df, on="trip_id")
+        
+    def get_stops_location(self):
+        """
+        Gets the location of the stops from the static GTFS data.
+
+        Returns:
+            pl.DataFrame: The DataFrame containing the stop_id and the location of the stops.
+        """
+        if self.schedule_df is None:
+            self.load_static_data()
+        stops_df = pl.read_csv("temp_gtfs/stops.txt", dtypes=self.dtype_spec).lazy()
+        return stops_df.select(['stop_id', 'stop_lat', 'stop_lon']).collect()
 
     def download_and_process_realtime_data(self):
         """
