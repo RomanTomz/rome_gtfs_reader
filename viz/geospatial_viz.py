@@ -25,9 +25,7 @@ df = df.to_pandas()
 import h3
 import folium
 
-# Assuming `df` is your dataframe
-# Let's set the resolution level to 7 (adjust based on your needs)
-resolution = 9
+resolution = 8
 
 # Using apply with axis=1 to apply the function row-wise
 df['h3_index'] = df.apply(lambda row: h3.geo_to_h3(row['stop_lat'], row['stop_lon'], resolution), axis=1)
@@ -53,4 +51,4 @@ for _, row in h3_counts.iterrows():
     folium.Polygon(locations=row['boundary'], weight=2, color=color, fill=True, fill_color=color, fill_opacity=0.4).add_to(m)
 
 # Save or display the map
-m.save('h3_density_map.html')
+m.save('hexagon_map.html')

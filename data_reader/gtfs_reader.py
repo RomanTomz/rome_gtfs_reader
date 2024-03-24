@@ -1,8 +1,15 @@
+import sys
+import os
+
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_path)
+
 import polars as pl
 import requests
 import zipfile
 import io
 from google.transit import gtfs_realtime_pb2
+from data.gfts_feeds import static_url, realtime_url
 
 class GTFSDataProcessor:
     def __init__(self, static_url, realtime_url):
@@ -71,7 +78,7 @@ class GTFSDataProcessor:
         stops_df = pl.read_csv("temp_gtfs/stops.txt", dtypes=self.dtype_spec).lazy()
         return stops_df.select(['stop_id', 'stop_lat', 'stop_lon']).collect()
 
-    def download_and_process_realtime_data(self):
+    def download_and_process_delay_data(self):
         """
         Downloads and processes the real-time GTFS data from the provided URL.
         """
@@ -115,8 +122,8 @@ class GTFSDataProcessor:
         return self.summary_df
 
 if __name__ == "__main__":
-    static_url = "https://dati.comune.roma.it/catalog/dataset/a7dadb4a-66ae-4eff-8ded-a102064702ba/resource/266d82e1-ba53-4510-8a81-370880c4678f/download/rome_static_gtfs_test.zip"
-    realtime_url = "https://dati.comune.roma.it/catalog/dataset/a7dadb4a-66ae-4eff-8ded-a102064702ba/resource/bf7577b5-ed26-4f50-a590-38b8ed4d2827/download/rome_trip_updates.pb"
+    static_url = static_url
+    realtime_url = realtime_url
     processor = GTFSDataProcessor(static_url, realtime_url)
     summary_df = processor.get_summary_df()
     print(summary_df)
