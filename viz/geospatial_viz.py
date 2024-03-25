@@ -15,42 +15,41 @@ import pandas as pd
 
 reader = GTFSDataProcessor(static_url=static_url, realtime_url=realtime_url)
 
-summary_df = reader.get_summary_df()
 
-print(summary_df.columns)
+def create_hexagon_density_map(df, resolution=8, map_center=[41.9028, 12.4964], zoom_start=11):
+    """
+    Creates a hexagon density map using H3 and Folium.
 
-df = reader.get_stops_location()
-df = df.to_pandas()
+    Args:
+        df (pandas.DataFrame): DataFrame containing 'stop_lat' and 'stop_lon' columns.
+        resolution (int): The H3 resolution to use for the hexagons.
+        map_center (list): The latitude and longitude to center the Folium map.
+        zoom_start (int): The initial zoom level for the Folium map.
 
-import h3
-import folium
+    Returns:
+        folium.Map: The Folium map object with the hexagon density layer.
+    """
 
-resolution = 8
+    # Step 1: Convert stop locations to H3 indices
+    df['h3_index'] = df.apply(lambda row: h3.geo_to_h3(row['stop_lat'], row['stop_lon'], resolution), axis=1)
 
-# Using apply with axis=1 to apply the function row-wise
-df['h3_index'] = df.apply(lambda row: h3.geo_to_h3(row['stop_lat'], row['stop_lon'], resolution), axis=1)
+    # Step 2: Aggregate stops by H3 index to get densities
+    h3_counts = df['h3_index'].value_counts().reset_index()
+    h3_counts.columns = ['h3_index', 'count']
 
-# Step 2: Aggregate stops by H3 index to get densities
-h3_counts = df['h3_index'].value_counts().reset_index()
+    # Step 3: Get hexagon boundaries
+    h3_counts['boundary'] = h3_counts['h3_index'].apply(lambda x: h3.h3_to_geo_boundary(x, geo_json=False))
 
-h3_counts.columns = ['h3_index', 'count']
+    # Step 4: Plot the hexagons
+    m = folium.Map(location=map_center, zoom_start=zoom_start)
 
-# Step 3: Get hexagon boundaries
-h3_counts['boundary'] = h3_counts['h3_index'].apply(lambda x: h3.h3_to_geo_boundary(x, geo_json=False))
+    for _, row in h3_counts.iterrows():
+        # Determine the color; customize this as needed
+        color = '#%02x%02x%02x' % (min(row['count'] * 40, 255), 0, 0)
+        folium.Polygon(locations=row['boundary'], weight=2, color=color, fill=True, fill_color=color, fill_opacity=0.4).add_to(m)
 
-# Step 4: Plot the hexagons
-# Initialize a Folium map at a central location
-m = folium.Map(location=[41.9028, 12.4964], zoom_start=11)
+    return m
 
-# Add hexagons to the map
-for _, row in h3_counts.iterrows():
-    # Use the count to determine the color, you can customize this part
-    color = '#%02x%02x%02x' % (min(row['count'] * 40, 255), 0, 0)
-    
-    # Create the polygon for the hexagon
-    folium.Polygon(locations=row['boundary'], weight=2, color=color, fill=True, fill_color=color, fill_opacity=0.4).add_to(m)
-
-# Save or display the map
-m.save('hexagon_map.html')
-
-
+df = reader.get_stops_location().to_pandas()
+map_obj = create_hexagon_density_map(df)
+map_obj.save('hexagon_map.html')
