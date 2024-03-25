@@ -48,23 +48,34 @@ class GTFSDataProcessor:
         self.schedule_df = None
         self.realtime_df = None
         self.summary_df = None
+        
+    @staticmethod
+    def extract_file_from_zip(zipfile_obj, filename, dtype_spec):
+        """
+        Extracts a file from a zipfile object and loads it into a Polars DataFrame.
 
-    def download_and_extract_static_data(self):
+        Args:
+            zipfile_obj (zipfile.ZipFile): The zipfile object.
+            filename (str): The name of the file to extract and read.
+            dtype_spec (dict): The data type specifications for the columns.
+
+        Returns:
+            pl.DataFrame: The extracted file as a Polars DataFrame.
         """
-        Downloads and extracts the static GTFS data from the provided URL.
-        """
-        response = requests.get(self.static_url)
-        with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-            z.extractall("temp_gtfs")
+        with zipfile_obj.open(filename) as file:
+            return pl.read_csv(file, dtypes=dtype_spec).lazy()
+
 
     def load_static_data(self):
         """
-        Loads the static GTFS data into a DataFrame.
+        Loads the static GTFS data into a DataFrame directly from the ZIP archive in memory.
         """
-        self.download_and_extract_static_data()
-        stop_times_df = pl.read_csv("temp_gtfs/stop_times.txt", dtypes=self.dtype_spec).lazy()
-        trips_df = pl.read_csv("temp_gtfs/trips.txt", dtypes=self.dtype_spec).lazy()
-        self.schedule_df = trips_df.join(stop_times_df, on="trip_id")
+        response = requests.get(self.static_url)
+        with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+            stop_times_df = self.extract_file_from_zip(z, 'stop_times.txt', self.dtype_spec)
+            trips_df = self.extract_file_from_zip(z, 'trips.txt', self.dtype_spec)
+            self.schedule_df = trips_df.join(stop_times_df, on="trip_id")
+
         
     def get_stops_location(self):
         """
