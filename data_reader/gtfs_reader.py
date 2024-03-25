@@ -49,6 +49,20 @@ class GTFSDataProcessor:
         self.realtime_df = None
         self.summary_df = None
         
+    def save_static_feed_files(self):
+        """
+        Downloads and saves the static GTFS data to the local filesystem.
+        """
+        target_directory = "temp_gtfs"
+        os.makedirs(target_directory, exist_ok=True)
+        
+        response = requests.get(self.static_url)
+        if response.status_code == 200:
+            with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+                z.extractall(target_directory)
+        else:
+            raise Exception(f"Failed to download static GTFS data. Status code: {response.status_code}")
+        
     @staticmethod
     def extract_file_from_zip(zipfile_obj, filename, dtype_spec):
         """
