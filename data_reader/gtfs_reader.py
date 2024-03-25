@@ -117,7 +117,7 @@ class GTFSDataProcessor:
         """
         if self.summary_df is None:
             self.load_static_data()
-            self.download_and_process_realtime_data()
+            self.download_and_process_delay_data()
             self.merge_and_process_data()
         return self.summary_df
 
