@@ -4,6 +4,8 @@ import os
 root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_path)
 
+from datetime import datetime
+
 import polars as pl
 import requests
 import zipfile
@@ -120,7 +122,7 @@ class GTFSDataProcessor:
                         realtime_updates.append({'trip_id': trip_id, 'delay': delay_in_minutes})
         self.realtime_df = pl.DataFrame(realtime_updates).lazy()
 
-    def merge_and_process_data(self):
+    def merge_and_process_delay_data(self):
         """
         Merges and processes the static and real-time GTFS data.
         """
@@ -143,8 +145,50 @@ class GTFSDataProcessor:
         if self.summary_df is None:
             self.load_static_data()
             self.download_and_process_delay_data()
-            self.merge_and_process_data()
+            self.merge_and_process_delay_data()
         return self.summary_df
+    
+    def correct_gtfs_times(self, df, time_column):
+        """
+        Corrects the GTFS time strings in a DataFrame column.
+
+        Args:
+            df (pandas.DataFrame): The DataFrame containing GTFS time data.
+            time_column (str): The name of the column with time strings to correct.
+        """
+        # Vectorized operation to correct hours greater than 23
+        time_split = df[time_column].str.split(':', expand=True).astype(int)
+        time_split[0] = time_split[0] % 24
+        df[time_column] = time_split[0].astype(str).str.zfill(2) + ':' + time_split[1].astype(str).str.zfill(2) + ':' + time_split[2].astype(str).str.zfill(2)
+
+    def get_gtfs_dataframe(self, file_name):
+        """
+        Gets the GTFS DataFrame.
+
+        Args:
+            file_name (str): The name of the GTFS file.
+
+        Returns:
+            pandas.DataFrame: The GTFS DataFrame containing the static data.
+        """
+        if self.schedule_df is None:
+            self.load_static_data()
+
+        file_path = f"data_reader/rome_static_gtfs/{file_name}.txt"
+        if not os.path.exists(file_path):
+            self.save_static_feed_files()
+
+        # Ensure that the dtypes are being applied correctly
+        df = pl.read_csv(file_path, dtypes=self.dtype_spec).to_pandas()
+
+        # If additional processing is needed for specific files, it can be done here
+        if file_name == 'stop_times':
+            # Assuming correct_gtfs_times modifies the DataFrame in place
+            self.correct_gtfs_times(df, 'arrival_time')
+            self.correct_gtfs_times(df, 'departure_time')
+
+        return df
+        
 
 if __name__ == "__main__":
     static_url = static_url

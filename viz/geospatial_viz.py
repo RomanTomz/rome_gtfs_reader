@@ -9,6 +9,7 @@ from data.gfts_feeds import static_url, realtime_url
 
 import h3
 import folium
+import matplotlib.pyplot as plt
 
 import pandas as pd
 
@@ -50,6 +51,35 @@ def create_hexagon_density_map(df, resolution=8, map_center=[41.9028, 12.4964], 
 
     return m
 
-df = reader.get_stops_location().to_pandas()
-map_obj = create_hexagon_density_map(df)
-map_obj.save('hexagon_map.html')
+# df = reader.get_stops_location().to_pandas()
+# map_obj = create_hexagon_density_map(df)
+# map_obj.save('hexagon_map.html')
+
+
+def plot_departure_times(df):
+    """
+    Plots the distribution of departure times.
+
+    Args:
+        df (pandas.DataFrame): DataFrame containing 'departure_time' column.
+    """
+
+    # Step 1: Extract the hour and minute components
+    df['hour'] = df['departure_time'].str[:2].astype(int)
+    df['minute'] = df['departure_time'].str[3:5].astype(int)
+
+    # Step 2: Calculate the departure time in minutes
+    df['departure_minutes'] = df['hour'] * 60 + df['minute']
+
+    # Step 3: Plot the distribution
+    ax = df['hour'].plot(kind='hist', bins=24 * 60, figsize=(12, 6), color='skyblue', edgecolor='black')
+    ax.set_xlabel('Departure Time (minutes)')
+    ax.set_ylabel('Frequency')
+    ax.set_title('Distribution of Departure Times')
+    ax.grid(axis='y', alpha=0.75)
+
+    plt.tight_layout()
+    plt.show()
+    
+df_stop_times = reader.get_gtfs_dataframe("stop_times")
+plot_departure_times(df_stop_times)
