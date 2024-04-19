@@ -81,5 +81,5 @@ def plot_departure_times(df):
     plt.tight_layout()
     plt.show()
     
-df_stop_times = reader.get_gtfs_dataframe("stop_times")
-plot_departure_times(df_stop_times)
+# df_stop_times = reader.get_gtfs_dataframe("stop_times")
+# plot_departure_times(df_stop_times)
