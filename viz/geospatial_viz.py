@@ -51,9 +51,9 @@ def create_hexagon_density_map(df, resolution=8, map_center=[41.9028, 12.4964], 
 
     return m
 
-df = reader.get_stops_location().to_pandas()
-map_obj = create_hexagon_density_map(df)
-map_obj.save('hexagon_map.html')
+# df = reader.get_stops_location().to_pandas()
+# map_obj = create_hexagon_density_map(df)
+# map_obj.save('hexagon_map.html')
 
 
 def plot_departure_times(df):
